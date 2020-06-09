@@ -10,7 +10,7 @@ This is a lesson template for the [Molecular Sciences Software Institute]({{ sit
 
 > ## Prerequisites
 >
-> Students should be familiar with opening the Terminal window and creating and navigating files in bash.
+> Students should be comfortable writing Python scripts.
 {: .prereq}
 
 {% include links.md %}

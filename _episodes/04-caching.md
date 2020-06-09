@@ -15,6 +15,16 @@ is called with the same parameters"
 - "Any pure function can be safely cached, but it is only beneficial to cache expensive functions"
 ---
 
+## Function Caching
+Although we think of computers as lightning quick, I'm sure that we have all been stuck waiting for a computer more times
+than we can count. In some fields of computational chemistry, this is actually quite common. If we are running complex simulations
+or very heavy computations, the runtime of our scripts starts to add up. There are many ways that we can make our code
+faster, but one of the easiest to implement is _function caching_. In function caching, we save the answers to all
+of all of our past calculations, so that we can look them up instead of recomputing them. This can save us huge amounts
+of time, but there are some important caveats. First, we will learn how to identify which functions to cache. Then, we
+will dive into some code and learn how to implement caching in Python!
+
+
 ## Pure Functions
 
 Our goal in this section is to understand what makes a function _pure_. To ge there, we must first learn about _state_.
