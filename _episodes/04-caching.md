@@ -19,15 +19,14 @@ is called with the same parameters"
 Although we think of computers as lightning quick, I'm sure that we have all been stuck waiting for a computer more times
 than we can count. In some fields of computational chemistry, this is actually quite common. If we are running complex simulations
 or very heavy computations, the runtime of our scripts starts to add up. There are many ways that we can make our code
-faster, but one of the easiest to implement is _function caching_. In function caching, we save the answers to all
+faster, and one of those ways is to implement is _function caching_. In function caching, we save the answers to all
 of all of our past calculations, so that we can look them up instead of recomputing them. This can save us huge amounts
-of time, but there are some important caveats. First, we will learn how to identify which functions to cache. Then, we
-will dive into some code and learn how to implement caching in Python!
+of time, but there are some important caveats. For a function to be a good candidate for caching, it must be both **expensive** and **pure**. First, we will learn how to identify which functions to cache. Then, we will dive into some code and learn how to implement caching in Python!
 
 
 ## Pure Functions
 
-Our goal in this section is to understand what makes a function _pure_. To ge there, we must first learn about _state_.
+Our goal in this section is to understand what makes a function _pure_. To get there, we must first learn about _state_.
 The state of a program is the contents of everything in memory at a given time. A function can be said to _mutate_ state
 if it changes anything besides its local variables. To illustrate this concept, let's look at the function `count_atoms`
 below.
@@ -144,11 +143,11 @@ difficult to keep track of what is going on. This makes it much easier to write 
 > Which of the following would be considered "side effects" of a function?
 >
 > 1. Returning a value
-> 2. Printing to the console
-> 4. Changing a parameter that is passed into the function
-> 5. Creating a new local array
-> 7. 2 & 3
-> 6. 1 & 4
+> 1. Printing to the console
+> 1. Changing a parameter that is passed into the function
+> 1. Creating a new local array
+> 1. 2 & 3
+> 1. 1 & 4
 >
 > > ## Solution
 > > The correct answer is (5). Recall that the _main effect_ of a function is to return a value. Any other observable effects besides
@@ -158,40 +157,97 @@ difficult to keep track of what is going on. This makes it much easier to write 
 > {: .solution}
 {: .challenge}
 
-## Function Expense
+## Function Expense - The timeit module
 
 A computer has two primary resources that our code can use up: _time_ and _memory_. Usually, there is a tradeoff between
 them: we can write really fast code that uses a lot of memory, really slow code that uses only a small amount of
 memory, or find some middle ground. The tuning of these resources is application specific, and you generally don't have
 to worry about it until you notice a problem. The _expense_ of any given function is the sum of all of the resources
 that it uses. One way to estimate function expense is with the `timeit` module. `timeit` is used to time different code
-snippets. Here we see the time expense for a few common Python operations.
+snippets.
+
+### How to use timeit
+
+To time code using the `timeit` module, you need to import the module, then use `Timer` to time a code snippet. The argument for timer is the code you would like to time as a string.
+
+~~~
+import timeit
+
+add = timeit.Timer("x= 5 + 5")
+~~~
+{: .language-python}
+
+You can then time how long this code takes using
+
+~~~
+add_time = add.timeit()
+~~~
+{: .language-python}
+
+With no argument, `timeit` will execute the code snippet 1,000,000 times and give you the amount of time it took. You can override this to execute fewer or more times:
+
+~~~
+# Execute 1000 times
+count = 10000
+add_time = add.timeit(count)
+~~~
+
+If your code snippet requires set-up (like importing a library), you specify that as a second argument to `Timer`. For the following example, our code snippet requires `numpy`, so we add `import numpy` as a second argument:
+
+~~~
+np_create = timeit.Timer("numpy.arange(20)", "import numpy")
+np_create_time = np_create.timeit(count)
+~~~
+{: .language-python}
+
+If you want to use `timeit` on a function you have defined, you can use a formatted string when creating your timer. For example, to time your `count_atoms_no_sides` function:
+
+~~~
+import timeit
+
+ethane = ['C','H','H','H','C','H','H']
+
+count_atoms_timer = timeit.Timer(f"{count_atoms(ethane)}")
+
+print(count_atoms_timer.timeit(1000)/1000)
+~~~
+{: .language-python}
+
+### Using timeit to time function expense
+
+Let's try this with a few more examples:
 
 ~~~
 import timeit
 count = 10000
 
 add = timeit.Timer("x = 5+5")
-print(f"Addition:             {add.timeit(count)/count} sec")
+add_time = add.timeit(count)
+print(f"Addition:             {add_time/count} sec")
 
 np_create = timeit.Timer("numpy.arange(20)", "import numpy")
-print(f"Numpy Array Creation: {np_create.timeit(count)/count} sec")
+np_create_time = np_create.timeit(count)
+print(f"Numpy Array Creation: {np_create_time/count} sec")
 
 list_lookup = timeit.Timer("our_list[5] = 43", "our_list = [x for x in range(0, 10)]")
-print(f"List Access:          {list_lookup.timeit(count)/count} sec")
+list_lookup_time = list_lookup.timeit(count)
+
+print(f"List Access:          {list_lookup_time/count} sec")
+
+print(f"Numpy array creation took {np_create_time/add_time} times longer than adding two numbers.")
 ~~~
 {: .language-python}
 
 ~~~
-Addition:             1.0092600000000119e-08 sec
-Numpy Array Creation: 4.681593999999997e-07 sec
-List Access:          2.8374899999999982e-08 sec
+Addition:             1.6892600000062428e-08 sec
+Numpy Array Creation: 9.034520000000157e-07 sec
+List Access:          3.797419999997942e-08 sec
+Numpy array creation took 53.482116429482545 times longer than adding two numbers.
 ~~~
 {: .output}
 
-The operations varied greatly in the time that they took to complete. Creating an array takes about 40 times longer than
-adding two numbers! Over time, your intuition about the relative expense of different operations will develop. For now,
-you can assume that operations that appear more complicated are more expensive. This includes operations like reading
+The operations varied greatly in the time that they took to complete. Creating an array takes about 50 times longer than
+adding two numbers (your timing may vary)! Over time, your intuition about the relative expense of different operations will develop. For now, you can assume that operations that appear more complicated are more expensive. This includes operations like reading
 and writing to files or creating large arrays. Keep in mind that even an expensive operation like creating an array only
 takes a fraction of a second to complete. Since modern computers are so fast, it is better to write code that is first
 and foremost easy to read, and only worry about making it less expensive when you have a good reason to do so.
@@ -265,7 +321,7 @@ Now that we understand what makes a function expensive, we can test our intuitio
 > > ## Solution
 > > *   `sum_2` is the least expensive because it is only performing a few arithmetic operations.
 > > *   `sum_1` is more expensive because it performs `n` caculations. However, the individual calculations are very
-> > simple, so it is not _too_ bad.
+> > simple, so it is not _too_ bad. 
 > > *   `sum_4` is next worst, because it creates a numpy array with `n` elements. This has a significant impact on the time
 > > cost of `sum_4`, but it is even more detrimental to the space cost of `sum_4`, as that massive array must be stored somewhere.
 > > *   Finally, `sum_3` is the most expensive. Creating an array is an expensive operation, and, since `sum_3` creates a new
@@ -373,7 +429,7 @@ def my_function(args):
 > > ~~~
 > > {:. output}
 > >
-> > Notice, however, that the breakdown of atom type in the second run is incorrect! This is beacause
+> > Notice, however, that the breakdown of atom type in the second run is incorrect! This is because
 > > setting the breakdown dictionary is a _side effect_ of `count_atoms`, and, since `count_atoms` was
 > > never actually run, none if its side effects took place! Since a cached function will not always be run, we can
 > > only safely cache pure functions.
