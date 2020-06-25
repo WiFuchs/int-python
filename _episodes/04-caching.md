@@ -29,7 +29,8 @@ of time, but there are some important caveats. For a function to be a good candi
 Our goal in this section is to understand what makes a function _pure_. To get there, we must first learn about _state_.
 The state of a program is the contents of everything in memory at a given time. A function can be said to _mutate_ state
 if it changes anything besides its local variables. To illustrate this concept, let's look at the function `count_atoms`
-below.
+from the last episode.
+TODO: decide if it is better to use weaker count_atoms example from last episode, or stick with this?
 
 ~~~
 def count_atoms(molecule, counts):
@@ -321,7 +322,7 @@ Now that we understand what makes a function expensive, we can test our intuitio
 > > ## Solution
 > > *   `sum_2` is the least expensive because it is only performing a few arithmetic operations.
 > > *   `sum_1` is more expensive because it performs `n` caculations. However, the individual calculations are very
-> > simple, so it is not _too_ bad. 
+> > simple, so it is not _too_ bad.
 > > *   `sum_4` is next worst, because it creates a numpy array with `n` elements. This has a significant impact on the time
 > > cost of `sum_4`, but it is even more detrimental to the space cost of `sum_4`, as that massive array must be stored somewhere.
 > > *   Finally, `sum_3` is the most expensive. Creating an array is an expensive operation, and, since `sum_3` creates a new
